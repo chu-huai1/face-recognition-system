@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceID 人脸识别系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#0FC6C2',
+                        danger: '#F53F3F',
+                        success: '#00B42A',
+                        warning: '#FF7D00',
+                        dark: '#1D2129',
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-md;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- 导航栏 -->
+    <nav id="navbar" class="bg-white shadow-sm fixed w-full z-10 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fa fa-id-card-o text-primary text-2xl mr-2"></i>
+                        <span class="font-bold text-xl text-primary">FaceID</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="#dashboard" class="border-primary text-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">仪表盘</a>
+                        <a href="#recognize" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">人脸检测</a>
+                        <a href="#verify" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">人脸验证</a>
+                        <a href="#manage" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">人脸库管理</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center">
+                            <img class="h-8 w-8 rounded-full object-cover" src="https://picsum.photos/200/200?random=1" alt="用户头像">
+                            <span class="ml-2 text-sm font-medium text-gray-700 hidden sm:block">管理员</span>
+                        </div>
+                    </div>
+                    <button type="button" class="ml-4 block sm:hidden p-2 rounded-md text-gray-500 hover:text-primary focus:outline-none" id="mobile-menu-button">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div class="sm:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 bg-white shadow-lg">
+                <a href="#dashboard" class="bg-primary text-white block px-3 py-2 rounded-md text-base font-medium">仪表盘</a>
+                <a href="#recognize" class="hover:bg-gray-50 text-gray-700 block px-3 py-2 rounded-md text-base font-medium">人脸检测</a>
+                <a href="#verify" class="hover:bg-gray-50 text-gray-700 block px-3 py-2 rounded-md text-base font-medium">人脸验证</a>
+                <a href="#manage" class="hover:bg-gray-50 text-gray-700 block px-3 py-2 rounded-md text-base font-medium">人脸库管理</a>
+            </div>
+        </div>
+    </nav>
+<main class="pt-20 pb-10">
+        <!-- 仪表盘区域 -->
+        <section id="dashboard" class="container mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+            <h1 class="text-2xl font-bold text-dark mb-6">仪表盘</h1>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-primary/10 p-3 rounded-lg">
+                            <i class="fa fa-user-o text-primary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">人脸库总数</p>
+                            <h3 class="text-2xl font-bold text-dark" id="total-faces">0</h3>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-success text-sm font-medium">
+                            <i class="fa fa-arrow-up"></i> <span id="total-faces-growth">0</span>
+                        </span>
+                        <span class="text-xs text-gray-500 ml-2">较上周</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-success/10 p-3 rounded-lg">
+                            <i class="fa fa-check-circle-o text-success text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">今日识别次数</p>
+                            <h3 class="text-2xl font-bold text-dark" id="today-recog">0</h3>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-success text-sm font-medium">
+                            <i class="fa fa-arrow-up"></i> <span id="today-recog-growth">0</span>
+                        </span>
+                        <span class="text-xs text-gray-500 ml-2">较昨日</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-secondary/10 p-3 rounded-lg">
+                            <i class="fa fa-check-square-o text-secondary text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">识别准确率</p>
+                            <h3 class="text-2xl font-bold text-dark" id="recog-accuracy">98.7%</h3>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-success text-sm font-medium">
+                            <i class="fa fa-arrow-up"></i> <span id="accuracy-growth">1.2%</span>
+                        </span>
+                        <span class="text-xs text-gray-500 ml-2">较上周</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-warning/10 p-3 rounded-lg">
+                            <i class="fa fa-clock-o text-warning text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">平均识别时间</p>
+                            <h3 class="text-2xl font-bold text-dark" id="recog-time">0.32s</h3>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center">
+                        <span class="text-danger text-sm font-medium">
+                            <i class="fa fa-arrow-up"></i> 0.05s
+                        </span>
+                        <span class="text-xs text-gray-500 ml-2">较上周</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold text-dark">识别统计趋势</h2>
+                        <button class="text-sm text-primary hover:text-primary/80" id="refresh-trend-chart">
+                            <i class="fa fa-refresh"></i> 刷新
+                        </button>
+                    </div>
+                    <div class="h-80">
+                        <canvas id="recognitionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-bold text-dark">识别类型分布</h2>
+                        <button class="text-sm text-primary hover:text-primary/80" id="refresh-pie-chart">
+                            <i class="fa fa-refresh"></i> 刷新
+                        </button>
+                    </div>
+                    <div class="h-80">
+                        <canvas id="typeDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 人脸检测区域 -->
+        <section id="recognize" class="container mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-dark mb-2">人脸检测与识别</h2>
+                        <p class="text-gray-600">上传人脸图片或使用摄像头进行实时识别</p>
+                    </div>
+                    <div class="mt-4 md:mt-0">
+                        <button id="upload-photo-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
+                            <i class="fa fa-upload mr-2"></i> 上传图片
+                        </button>
+                        <button id="use-camera-btn" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-colors duration-200">
+                            <i class="fa fa-video-camera mr-2"></i> 使用摄像头
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-medium text-dark mb-4">输入图像</h3>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 h-80 flex items-center justify-center bg-gray-50" id="input-image-container">
+                            <div class="text-center" id="empty-input">
+                                <i class="fa fa-image text-gray-400 text-5xl mb-3"></i>
+                                <p class="text-gray-500">请上传人脸图片或开启摄像头</p>
+                            </div>
+                            <img id="input-image" class="max-h-full mx-auto hidden" alt="输入的人脸图像">
+                            <video id="camera-preview" class="hidden" autoplay></video>
+                        </div>
+                        <div class="mt-4 flex justify-center">
+                            <button id="capture-btn" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
+                                <i class="fa fa-camera mr-2"></i> 拍照
+                            </button>
+                            <button id="cancel-camera-btn" class="hidden ml-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
+                                <i class="fa fa-times mr-2"></i> 取消
+                            </button>
+                            <button id="recognize-btn" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-success hover:bg-success/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success transition-colors duration-200">
+                                <i class="fa fa-search mr-2"></i> 开始识别
+                            </button>
+                        </div>
+                        <input type="file" id="photo-upload" class="hidden" accept="image/*">
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-medium text-dark mb-4">识别结果</h3>
+                        <div class="border rounded-lg p-4 h-80 bg-gray-50 flex items-center justify-center" id="recognition-result">
+                            <div class="text-center" id="empty-result">
+                                <i class="fa fa-user-secret text-gray-400 text-5xl mb-3"></i>
+                                <p class="text-gray-500">请上传图片并点击"开始识别"</p>
+                            </div>
+                            
+                            <div class="hidden" id="loading-result">
+                                <div class="flex justify-center mb-4">
+                                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                                </div>
+                                <p class="text-center text-gray-600">正在识别中，请稍候...</p>
+                            </div>
+                            
+                            <div class="hidden w-full" id="success-result">
+                                <div class="flex flex-col items-center">
+                                    <img id="result-image" class="w-32 h-32 rounded-full object-cover mb-4 border-4 border-success" alt="识别结果图片">
+                                    <h3 class="text-xl font-bold text-dark mb-1">识别成功</h3>
+                                    <p class="text-gray-600 mb-2">姓名: <span id="recognized-name" class="font-medium"></span></p>
+                                    <p class="text-gray-600">相似度: <span id="recognized-similarity" class="font-medium text-success"></span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="hidden text-center" id="error-result">
+                                <i class="fa fa-exclamation-triangle text-warning text-5xl mb-3"></i>
+                                <p class="text-gray-600" id="error-message">未检测到人脸，请重新上传</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-bold text-dark">识别历史</h2>
+                    <button class="text-primary text-sm hover:text-primary/80" id="view-all-logs">
+                        查看全部 <i class="fa fa-angle-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">识别结果</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">相似度</th>
+                                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="logs-table-body">
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">暂无识别记录</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 人脸验证区域 -->
+        <section id="verify" class="container mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-xl font-bold text-dark mb-6">人脸验证</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2">
+                        <div class="border rounded-lg p-4 bg-gray-50">
+                            <h3 class="text-lg font-medium text-dark mb-4">验证流程</h3>
+                            
+                            <div class="space-y-6">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white">
+                                        <span class="font-medium">1</span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h4 class="text-base font-medium text-gray-900">选择两张人脸图片</h4>
+                                        <p class="text-sm text-gray-500 mt-1">上传或拍摄两张需要验证的人脸图片，系统将比对是否为同一人</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white">
+                                        <span class="font-medium">2</span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h4 class="text-base font-medium text-gray-900">设置验证阈值</h4>
+                                        <p class="text-sm text-gray-500 mt-1">根据需求调整验证严格程度，阈值越高，验证越严格</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white">
+                                        <span class="font-medium">3</span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <h4 class="text-base font-medium text-gray-900">开始验证</h4>
+                                        <p class="text-sm text-gray-500 mt-1">系统将比对两张人脸的特征向量，返回验证结果和相似度</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="border rounded-lg p-4 bg-gray-50 h-full">
+                            <h3 class="text-lg font-medium text-dark mb-4">验证阈值设置</h3>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">相似度阈值</label>
+                                    <div class="flex items-center">
+                                        <input type="range" min="0" max="100" value="55" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary" id="threshold-slider">
+                                        <span class="ml-2 text-sm font-medium text-gray-700 w-10 text-center" id="threshold-value">55%</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">推荐阈值: 55% (与后端一致)</p>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">验证模式</label>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center">
+                                            <input id="strict-mode" name="verification-mode" type="radio" class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                                            <label for="strict-mode" class="ml-2 block text-sm text-gray-700">严格模式 (70%)</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input id="normal-mode" name="verification-mode" type="radio" class="h-4 w-4 text-primary focus:ring-primary border-gray-300" checked>
+                                            <label for="normal-mode" class="ml-2 block text-sm text-gray-700">普通模式 (55%)</label>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <input id="relaxed-mode" name="verification-mode" type="radio" class="h-4 w-4 text-primary focus:ring-primary border-gray-300">
+                                            <label for="relaxed-mode" class="ml-2 block text-sm text-gray-700">宽松模式 (40%)</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <button id="start-verification-btn" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
+                                        <i class="fa fa-check-circle mr-2"></i> 开始验证
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-medium text-dark mb-4">待验证图片</h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 h-64 flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors duration-200" id="upload-image-1">
+                                    <div class="text-center" id="upload-placeholder-1">
+                                        <i class="fa fa-upload text-gray-400 text-3xl mb-2"></i>
+                                        <p class="text-gray-500 text-sm">上传图片 1</p>
+                                    </div>
+                                    <img id="preview-image-1" class="max-h-full mx-auto hidden" alt="上传的第一张人脸图片">
+                                </div>
+                                <input type="file" id="file-input-1" class="hidden" accept="image/*">
+                            </div>
+                            
+                            <div>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 h-64 flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors duration-200" id="upload-image-2">
+                                    <div class="text-center" id="upload-placeholder-2">
+                                        <i class="fa fa-upload text-gray-400 text-3xl mb-2"></i>
+                                        <p class="text-gray-500 text-sm">上传图片 2</p>
+                                    </div>
+                                    <img id="preview-image-2" class="max-h-full mx-auto hidden" alt="上传的第二张人脸图片">
+                                </div>
+                                <input type="file" id="file-input-2" class="hidden" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-medium text-dark mb-4">验证结果</h3>
+                        
+                        <div class="border rounded-lg p-4 h-64 bg-gray-50 flex items-center justify-center" id="verification-result">
+                            <div class="text-center" id="empty-verification-result">
+                                <i class="fa fa-balance-scale text-gray-400 text-5xl mb-3"></i>
+                                <p class="text-gray-500">请上传两张人脸图片并点击"开始验证"</p>
+                            </div>
+                            
+                            <div class="hidden" id="loading-verification-result">
+                                <div class="flex justify-center mb-4">
+                                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                                </div>
+                                <p class="text-center text-gray-600">正在验证中，请稍候...</p>
+                            </div>
+                            
+                            <div class="hidden" id="success-verification-result">
+                                <div class="flex items-center justify-center mb-4">
+                                    <i class="fa fa-check-circle text-success text-5xl mr-3"></i>
+                                    <div>
+                                        <p class="text-2xl font-bold text-success">验证通过</p>
+                                        <p class="text-gray-600">两张人脸为同一人</p>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-lg font-medium text-dark">相似度: <span class="text-success" id="verification-similarity"></span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="hidden" id="fail-verification-result">
+                                <div class="flex items-center justify-center mb-4">
+                                    <i class="fa fa-times-circle text-danger text-5xl mr-3"></i>
+                                    <div>
+                                        <p class="text-2xl font-bold text-danger">验证失败</p>
+                                        <p class="text-gray-600">两张人脸不是同一人</p>
+                                    </div>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-lg font-medium text-dark">相似度: <span class="text-danger" id="verification-dissimilarity"></span></p>
+                                </div>
+                            </div>
+                            
+                            <div class="hidden text-center" id="error-verification-result">
+                                <i class="fa fa-exclamation-triangle text-warning text-5xl mb-3"></i>
+                                <p class="text-gray-600" id="verification-error-message"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- 人脸库管理区域 -->
+        <section id="manage" class="container mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-dark mb-2">人脸库管理</h2>
+                        <p class="text-gray-600">管理已注册的人脸信息，支持添加、编辑和删除操作</p>
+                    </div>
+                    <div class="mt-4 md:mt-0 flex space-x-3">
+                        <button id="refresh-faces-btn" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
+                            <i class="fa fa-refresh mr-2"></i> 刷新
+                        </button>
+                        <button id="add-face-btn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
+                            <i class="fa fa-plus-circle mr-2"></i> 添加人脸
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col mb-6">
+                    <div class="flex items-center mb-4">
+                        <div class="relative w-64">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" id="search-face" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" placeholder="搜索姓名...">
+                        </div>
+                        <div class="ml-4">
+                            <select id="filter-category" class="block pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+                                <option>所有类别</option>
+                                <option>员工</option>
+                                <option>访客</option>
+                                <option>VIP</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" id="face-library">
+                    <!-- 动态加载人脸卡片 -->
+                    <div class="col-span-full text-center py-8 text-gray-500">
+                        <i class="fa fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>加载中...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fa fa-id-card-o text-primary text-xl mr-2"></i>
+                    <span class="font-bold text-lg text-primary">FaceID</span>
+                    <span class="ml-2 text-sm text-gray-500">© 2025 人脸识别系统 版权所有</span>
+                </div>
+                <div class="mt-4 md:mt-0 flex space-x-6">
+                    <a href="#" class="text-gray-500 hover:text-primary transition-colors duration-200">
+                        <i class="fa fa-question-circle mr-1"></i> 帮助中心
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-primary transition-colors duration-200">
+                        <i class="fa fa-file-text-o mr-1"></i> 使用文档
+                    </a>
+                    <a href="#" class="text-gray-500 hover:text-primary transition-colors duration-200">
+                        <i class="fa fa-phone mr-1"></i> 联系我们
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 添加人脸的模态框 -->
+    <div id="add-face-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div class="px-6 py-4 border-b">
+                <h3 class="text-lg font-bold text-dark">添加人脸</h3>
+            </div>
+            <div class="px-6 py-4">
+                <form id="add-face-form">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                        <input type="text" id="face-name" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">类别</label>
+                        <select id="face-category" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            <option>员工</option>
+                            <option>访客</option>
+                            <option>VIP</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">员工编号</label>
+                        <input type="text" id="face-employee-id" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">年龄</label>
+                        <input type="number" id="face-age" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">人脸照片</label>
+                        <input type="file" id="face-photo" class="w-full" accept="image/*" required>
+                        <img id="face-photo-preview" class="mt-2 w-32 h-32 object-cover rounded hidden">
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 border-t flex justify-end space-x-3">
+                <button id="cancel-add-face" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">取消</button>
+                <button id="confirm-add-face" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90">确认添加</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // API 基础地址
+        const API_BASE = 'http://127.0.0.1:5000';
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 移动端菜单切换
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function() {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // 导航栏滚动效果
+            const navbar = document.getElementById('navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 10) {
+                    navbar.classList.add('shadow');
+                    navbar.classList.remove('shadow-sm');
+                } else {
+                    navbar.classList.remove('shadow');
+                    navbar.classList.add('shadow-sm');
+                }
+            });
+
+            // 初始化图表和数据
+            initCharts();
+            loadDashboardStats();
+            loadFaceCount();
+            loadLogs();
+            loadFaces();
+
+            // 人脸检测 - 上传图片
+            const uploadPhotoBtn = document.getElementById('upload-photo-btn');
+            const photoUpload = document.getElementById('photo-upload');
+            const inputImage = document.getElementById('input-image');
+            const emptyInput = document.getElementById('empty-input');
+            
+            uploadPhotoBtn.addEventListener('click', function() {
+                photoUpload.click();
+            });
+
+            photoUpload.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        emptyInput.classList.add('hidden');
+                        inputImage.src = event.target.result;
+                        inputImage.classList.remove('hidden');
+                        document.getElementById('camera-preview').classList.add('hidden');
+                        document.getElementById('recognize-btn').classList.remove('hidden');
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // 摄像头功能
+            const useCameraBtn = document.getElementById('use-camera-btn');
+            const cameraPreview = document.getElementById('camera-preview');
+            const captureBtn = document.getElementById('capture-btn');
+            const cancelCameraBtn = document.getElementById('cancel-camera-btn');
+            const recognizeBtn = document.getElementById('recognize-btn');
+            let stream = null;
+
+            useCameraBtn.addEventListener('click', async function() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    emptyInput.classList.add('hidden');
+                    inputImage.classList.add('hidden');
+                    cameraPreview.srcObject = stream;
+                    cameraPreview.classList.remove('hidden');
+                    captureBtn.classList.remove('hidden');
+                    cancelCameraBtn.classList.remove('hidden');
+                    recognizeBtn.classList.add('hidden');
+                } catch (err) {
+                    alert('无法访问摄像头，请确保已授予权限或设备支持摄像头');
+                }
+            });
+
+            cancelCameraBtn.addEventListener('click', function() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                cameraPreview.classList.add('hidden');
+                captureBtn.classList.add('hidden');
+                cancelCameraBtn.classList.add('hidden');
+                emptyInput.classList.remove('hidden');
+                recognizeBtn.classList.remove('hidden');
+            });
+
+            captureBtn.addEventListener('click', function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = cameraPreview.videoWidth;
+                canvas.height = cameraPreview.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+                
+                inputImage.src = canvas.toDataURL('image/png');
+                inputImage.classList.remove('hidden');
+                cameraPreview.classList.add('hidden');
+                
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                
+                captureBtn.classList.add('hidden');
+                cancelCameraBtn.classList.add('hidden');
+                recognizeBtn.classList.remove('hidden');
+            });
+
+            // ========== 真实 API 调用 - 人脸识别 ==========
+            const emptyResult = document.getElementById('empty-result');
+            const loadingResult = document.getElementById('loading-result');
+            const successResult = document.getElementById('success-result');
+            const errorResult = document.getElementById('error-result');
+            const resultImage = document.getElementById('result-image');
+            const recognizedName = document.getElementById('recognized-name');
+            const recognizedSimilarity = document.getElementById('recognized-similarity');
+            const errorMessage = document.getElementById('error-message');
+
+            recognizeBtn.addEventListener('click', async function() {
+                if (!inputImage.src || inputImage.src === '') {
+                    alert('请先上传图片或使用摄像头拍摄');
+                    return;
+                }
+
+                emptyResult.classList.add('hidden');
+                successResult.classList.add('hidden');
+                errorResult.classList.add('hidden');
+                loadingResult.classList.remove('hidden');
+
+                try {
+                    const response = await fetch(inputImage.src);
+                    const blob = await response.blob();
+                    
+                    const formData = new FormData();
+                    formData.append('image', blob, 'face.jpg');
+
+                    const apiResponse = await fetch(API_BASE +'/api/recognize', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await apiResponse.json();
+                    
+                    loadingResult.classList.add('hidden');
+                    
+                    if (data.success) {
+                        resultImage.src = inputImage.src;
+                        recognizedName.textContent = data.name;
+                        recognizedSimilarity.textContent = data.similarity + '%';
+                        successResult.classList.remove('hidden');
+                        // 刷新日志和仪表盘
+                        loadLogs();
+                        loadDashboardStats();
+                    } else {
+                        errorMessage.textContent = data.error || '识别失败';
+                        errorResult.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    loadingResult.classList.add('hidden');
+                    errorMessage.textContent = '网络错误：' + error.message;
+                    errorResult.classList.remove('hidden');
+                }
+            });
+
+            // 验证阈值滑块
+            const thresholdSlider = document.getElementById('threshold-slider');
+            const thresholdValue = document.getElementById('threshold-value');
+            const verificationModes = document.querySelectorAll('input[name="verification-mode"]');
+
+            thresholdSlider.addEventListener('input', function() {
+                thresholdValue.textContent = this.value + '%';
+                verificationModes.forEach(mode => mode.checked = false);
+            });
+
+            verificationModes.forEach(mode => {
+                mode.addEventListener('change', function() {
+                    let value = 55;
+                    if (this.id === 'strict-mode') value = 70;
+                    else if (this.id === 'normal-mode') value = 55;
+                    else if (this.id === 'relaxed-mode') value = 40;
+                    
+                    thresholdSlider.value = value;
+                    thresholdValue.textContent = value + '%';
+                });
+            });
+
+            // 验证图片上传
+            const uploadImage1 = document.getElementById('upload-image-1');
+            const uploadImage2 = document.getElementById('upload-image-2');
+            const fileInput1 = document.getElementById('file-input-1');
+            const fileInput2 = document.getElementById('file-input-2');
+            const previewImage1 = document.getElementById('preview-image-1');
+            const previewImage2 = document.getElementById('preview-image-2');
+            const uploadPlaceholder1 = document.getElementById('upload-placeholder-1');
+            const uploadPlaceholder2 = document.getElementById('upload-placeholder-2');
+
+            uploadImage1.addEventListener('click', () => fileInput1.click());
+            uploadImage2.addEventListener('click', () => fileInput2.click());
+
+            fileInput1.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        uploadPlaceholder1.classList.add('hidden');
+                        previewImage1.src = event.target.result;
+                        previewImage1.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            fileInput2.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        uploadPlaceholder2.classList.add('hidden');
+                        previewImage2.src = event.target.result;
+                        previewImage2.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            // ========== 真实 API 调用 - 人脸验证 ==========
+            const startVerificationBtn = document.getElementById('start-verification-btn');
+            const emptyVerificationResult = document.getElementById('empty-verification-result');
+            const loadingVerificationResult = document.getElementById('loading-verification-result');
+            const successVerificationResult = document.getElementById('success-verification-result');
+            const failVerificationResult = document.getElementById('fail-verification-result');
+            const errorVerificationResult = document.getElementById('error-verification-result');
+            const verificationSimilarity = document.getElementById('verification-similarity');
+            const verificationDissimilarity = document.getElementById('verification-dissimilarity');
+            const verificationErrorMessage = document.getElementById('verification-error-message');
+
+            startVerificationBtn.addEventListener('click', async function() {
+                if (!previewImage1.src || !previewImage2.src) {
+                    alert('请上传两张待验证的人脸图片');
+                    return;
+                }
+
+                emptyVerificationResult.classList.add('hidden');
+                successVerificationResult.classList.add('hidden');
+                failVerificationResult.classList.add('hidden');
+                errorVerificationResult.classList.add('hidden');
+                loadingVerificationResult.classList.remove('hidden');
+
+                try {
+                    const blob1 = await fetch(previewImage1.src).then(r => r.blob());
+                    const blob2 = await fetch(previewImage2.src).then(r => r.blob());
+                    
+                    const formData = new FormData();
+                    formData.append('image1', blob1, 'face1.jpg');
+                    formData.append('image2', blob2, 'face2.jpg');
+
+                    const apiResponse = await fetch(API_BASE +'/api/verify', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await apiResponse.json();
+                    
+                    loadingVerificationResult.classList.add('hidden');
+                    
+                    const threshold = parseInt(thresholdSlider.value);
+                    const similarity = data.similarity || 0;
+                    
+                    if (similarity >= threshold) {
+                        verificationSimilarity.textContent = similarity + '%';
+                        successVerificationResult.classList.remove('hidden');
+                    } else {
+                        verificationDissimilarity.textContent = similarity + '%';
+                        failVerificationResult.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    loadingVerificationResult.classList.add('hidden');
+                    verificationErrorMessage.textContent = '验证失败：' + error.message;
+                    errorVerificationResult.classList.remove('hidden');
+                }
+            });
+
+            // 搜索和筛选
+            const searchFace = document.getElementById('search-face');
+            const filterCategory = document.getElementById('filter-category');
+            
+            searchFace.addEventListener('input', filterFaces);
+            filterCategory.addEventListener('change', filterFaces);
+
+            // 添加人脸按钮
+            document.getElementById('add-face-btn').addEventListener('click', function() {
+                document.getElementById('add-face-modal').classList.remove('hidden');
+                document.getElementById('add-face-modal').classList.add('flex');
+            });
+
+            document.getElementById('cancel-add-face').addEventListener('click', function() {
+                document.getElementById('add-face-modal').classList.add('hidden');
+                document.getElementById('add-face-modal').classList.remove('flex');
+            });
+
+            // 照片预览
+            document.getElementById('face-photo').addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const preview = document.getElementById('face-photo-preview');
+                        preview.src = event.target.result;
+                        preview.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            // 确认添加人脸
+            document.getElementById('confirm-add-face').addEventListener('click', async function() {
+                const name = document.getElementById('face-name').value;
+                const category = document.getElementById('face-category').value;
+                const employeeId = document.getElementById('face-employee-id').value;
+                const age = document.getElementById('face-age').value;
+                const photoFile = document.getElementById('face-photo').files[0];
+
+                if (!name || !employeeId || !photoFile) {
+                    alert('请填写完整信息并上传照片');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('category', category);
+                formData.append('employee_id', employeeId);
+                formData.append('age', age);
+                formData.append('photo', photoFile);
+
+                try {
+                    const response = await fetch(API_BASE +'/api/faces', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('添加成功！');
+                        document.getElementById('add-face-modal').classList.add('hidden');
+                        document.getElementById('add-face-modal').classList.remove('flex');
+                        document.getElementById('add-face-form').reset();
+                        document.getElementById('face-photo-preview').classList.add('hidden');
+                        loadFaces();
+                        loadFaceCount();
+                        loadDashboardStats();
+                    } else {
+                        alert('添加失败：' + (data.error || '未知错误'));
+                    }
+                } catch (error) {
+                    alert('网络错误：' + error.message);
+                }
+            });
+
+            // 刷新人脸库
+            document.getElementById('refresh-faces-btn').addEventListener('click', loadFaces);
+
+            // 图表刷新
+            document.getElementById('refresh-trend-chart').addEventListener('click', function() {
+                destroyCharts();
+                initCharts();
+            });
+            
+            document.getElementById('refresh-pie-chart').addEventListener('click', function() {
+                destroyCharts();
+                initCharts();
+            });
+        });
+
+        // 加载仪表盘统计
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(API_BASE +'/api/dashboard/stats');
+                const data = await response.json();
+                document.getElementById('total-faces').textContent = data.total_faces || 0;
+                document.getElementById('today-recog').textContent = data.today_recognitions || 0;
+                document.getElementById('recog-accuracy').textContent = (data.accuracy || 98.7) + '%';
+                document.getElementById('recog-time').textContent = (data.avg_time || 0.32) + 's';
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+            }
+        }
+
+        // 加载人脸库总数
+        async function loadFaceCount() {
+            try {
+                const response = await fetch(API_BASE +'/api/faces/count');
+                const data = await response.json();
+                document.getElementById('total-faces').textContent = data.count || 0;
+            } catch (error) {
+                console.error('加载人脸总数失败:', error);
+            }
+        }
+
+        // 加载识别日志
+        async function loadLogs() {
+            try {
+                const response = await fetch(API_BASE +'/api/logs?limit=5');
+                const logs = await response.json();
+                const tbody = document.getElementById('logs-table-body');
+                
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">暂无识别记录</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = logs.map(log => {
+                    const statusClass = log.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                    const statusText = log.status === 'success' ? '成功' : '失败';
+                    const time = new Date(log.timestamp).toLocaleString('zh-CN');
+                    const similarity = log.similarity ? log.similarity.toFixed(1) + '%' : '-';
+                    
+                    return `<tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${time}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${log.matched_name || '未识别'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">${similarity}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch (error) {
+                console.error('加载日志失败:', error);
+            }
+        }
+
+        // 加载人脸库
+        async function loadFaces() {
+            const container = document.getElementById('face-library');
+            const category = document.getElementById('filter-category')?.value || '所有类别';
+            const search = document.getElementById('search-face')?.value || '';
+            
+            try {
+                const params = new URLSearchParams();
+                if (category !== '所有类别') params.append('category', category);
+                if (search) params.append('search', search);
+                
+                const response = await fetch(API_BASE +'/api/faces?' + params.toString());
+                const faces = await response.json();
+                
+                if (faces.length === 0) {
+                    container.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500"><i class="fa fa-user-o text-4xl mb-2"></i><p>暂无注册人脸</p></div>';
+                    return;
+                }
+                
+                container.innerHTML = faces.map(face => `
+                    <div class="bg-gray-50 rounded-xl shadow-sm overflow-hidden card-hover face-card" data-name="${face.name}" data-category="${face.category}" data-id="${face.id}">
+                        <div class="relative">
+                            <img src="${face.photo_path || 'https://picsum.photos/400/400?random=' + face.id}" alt="人脸照片" class="w-full h-48 object-cover">
+                            <div class="absolute top-2 right-2 ${getCategoryClass(face.category)} text-white text-xs px-2 py-1 rounded">${face.category}</div>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-bold text-dark">${face.name}</h3>
+                            <div class="mt-2 flex flex-wrap gap-2 text-sm">
+                                <span class="flex items-center"><i class="fa fa-id-card-o mr-1"></i> ${face.employee_id || '-'}</span>
+                                <span class="flex items-center"><i class="fa fa-birthday-cake mr-1"></i> ${face.age || '-'}岁</span>
+                            </div>
+                            <div class="flex space-x-2 mt-4">
+                                <button class="px-3 py-1 text-xs rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200" onclick="viewFace(${face.id})"><i class="fa fa-eye mr-1"></i> 查看</button>
+                                <button class="px-3 py-1 text-xs rounded-md bg-danger/10 text-danger hover:bg-danger/20" onclick="deleteFace(${face.id}, '${face.name}')"><i class="fa fa-trash mr-1"></i> 删除</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // 更新人脸库总数
+                document.getElementById('total-faces').textContent = faces.length;
+            } catch (error) {
+                console.error('加载人脸库失败:', error);
+                container.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">加载失败，请刷新重试</div>';
+            }
+        }
+
+        function getCategoryClass(category) {
+            const classes = { '员工': 'bg-primary/80', '访客': 'bg-warning/80', 'VIP': 'bg-secondary/80' };
+            return classes[category] || 'bg-gray-500/80';
+        }
+
+        function filterFaces() {
+            loadFaces();
+        }
+
+        window.deleteFace = async function(id, name) {
+    console.log('删除函数被调用，ID:', id);
+    
+    if (!confirm(`确定要删除 ${name} 的人脸信息吗？`)) return;
+    
+    try {
+        const response = await fetch(API_BASE + `/api/faces/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        console.log('删除响应:', data);
+        
+        if (data.success) {
+            alert('删除成功！');
+            // 强制刷新页面，清空缓存
+            window.location.href = window.location.href;
+        } else {
+            alert('删除失败：' + (data.error || '未知错误'));
+        }
+    } catch (error) {
+        console.error('删除错误:', error);
+        alert('网络错误：' + error.message);
+    }
+};
+
+        // 查看人脸详情
+        window.viewFace = function(id) {
+            alert('查看人脸详情 (ID: ' + id + ')');
+        };
+
+        // 图表
+        let recognitionChart = null;
+        let typeDistributionChart = null;
+
+        async function initCharts() {
+    // 先销毁已存在的图表
+    if (recognitionChart) {
+        recognitionChart.destroy();
+    }
+    if (typeDistributionChart) {
+        typeDistributionChart.destroy();
+    }
+    
+    // 获取趋势数据
+    const trendRes = await fetch('/api/dashboard/trend');
+    const trendData = await trendRes.json();
+    
+    const recognitionCtx = document.getElementById('recognitionChart').getContext('2d');
+    recognitionChart = new Chart(recognitionCtx, {
+        type: 'line',
+        data: {
+            labels: trendData.labels,
+            datasets: [{
+                label: '识别次数',
+                data: trendData.data,
+                borderColor: '#165DFF',
+                backgroundColor: 'rgba(22, 93, 255, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // 获取分布数据
+    const distRes = await fetch('/api/dashboard/distribution');
+    const distData = await distRes.json();
+    
+    const typeDistributionCtx = document.getElementById('typeDistributionChart').getContext('2d');
+    typeDistributionChart = new Chart(typeDistributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: distData.labels,
+            datasets: [{
+                data: distData.data,
+                backgroundColor: ['#165DFF', '#FF7D00', '#0FC6C2', '#86909C'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            cutout: '70%'
+        }
+    });
+}
+
+            const typeDistributionCtx = document.getElementById('typeDistributionChart').getContext('2d');
+            typeDistributionChart = new Chart(typeDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['员工', '访客', 'VIP', '未知'],
+                    datasets: [{
+                        data: [65, 20, 10, 5],
+                        backgroundColor: ['#165DFF', '#FF7D00', '#0FC6C2', '#86909C'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '70%'
+                }
+            });
+        
+
+        function destroyCharts() {
+            if (recognitionChart) { recognitionChart.destroy(); recognitionChart = null; }
+            if (typeDistributionChart) { typeDistributionChart.destroy(); typeDistributionChart = null; }
+        }
+    </script>
+</body>
+</html>
